@@ -1,0 +1,98 @@
+package nimbus
+
+use otmp
+
+use runtime
+runtime.vars.OTMP_ENABLE_INLINE_TEMPLATES :: true
+
+#local {
+    templates: otmp.TemplateRegistry
+    default_layout: str
+}
+
+Nimbus.setup_templates :: (self: &#Self) {
+    templates = otmp.registry()
+    templates->define_inline_templates()
+}
+
+Nimbus.define_template :: (self: &#Self, template: str, contents: str) {
+    templates->define_template(template, contents)
+}
+
+Nimbus.template_layout :: (self: &#Self, layout: str) {
+    default_layout = layout
+}
+
+
+
+Context.view_set :: (c: Context, name: str, value: any) {
+    vars := c->get("_view_data", &Map(str, any)) ?? [] {
+        v := new(Map.make(str, any))
+        c->set("_view_data", v)
+
+        return v
+    }
+
+    vars->put(name, any_copy(value, context.allocator))
+}
+
+Context.view_layout :: (c: Context, name: str) {
+    c->set("_view_layout", any_copy(name, context.allocator))
+}
+
+Context.view :: (c: Context, status: u32, template: str) {
+    c->set_header("Content-Type", "text/html")
+    c->write_headers(status)
+
+    scope  := c->get("_view_data", &Map(str, any)) ?? null
+    layout := c->get("_view_layout", str) ?? default_layout
+
+    w := c->writer()
+    use renderer := templates->prepare_renderer(layout, w) |> c->unwrap(500)
+
+    renderer->define_block("content", template)
+    if scope {
+        renderer->define_vars(*scope)
+    }
+
+    err := renderer->render()
+    if err != .None {
+        w->write_format("<p style=\"color: red\">OTMP Error: {}</p>", err)
+    }
+
+    c->flush()
+}
+
+Context.partial :: (c: Context, status: u32, template: str) {
+    c->set_header("Content-Type", "text/html")
+    c->write_headers(status)
+
+    w := c->writer()
+    use renderer := templates->prepare_renderer(template, w) |> c->unwrap(500)
+
+    scope := c->get("_view_data", &Map(str, any)) ?? null
+    if scope {
+        renderer->define_vars(*scope)
+    }
+
+    err := renderer->render()
+    if err != .None {
+        w->write_format("<p style=\"color: red\">OTMP Error: {}</p>", err)
+    }
+
+    c->flush()
+}
+
+
+#local
+any_copy :: (x: any, allocator: Allocator) -> any {
+    use runtime.info
+    use core.memory
+
+    size := info.get_type_info(x.type).size
+    new_data := allocator->alloc(size)
+    memory.copy(new_data, x.data, size) 
+
+    return .{ new_data, x.type }
+}
+
