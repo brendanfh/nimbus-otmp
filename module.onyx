@@ -83,16 +83,3 @@ Context.partial :: (c: Context, status: u32, template: str) {
     c->flush()
 }
 
-
-#local
-any_copy :: (x: any, allocator: Allocator) -> any {
-    use runtime.info
-    use core.memory
-
-    size := info.get_type_info(x.type).size
-    new_data := allocator->alloc(size)
-    memory.copy(new_data, x.data, size) 
-
-    return .{ new_data, x.type }
-}
-
