@@ -19,6 +19,10 @@ Nimbus.define_template :: (self: &#Self, template: str, contents: str) {
     templates->define_template(template, contents)
 }
 
+Nimbus.template_alias :: (self: &#Self, alias: str, template: str) {
+    templates->define_alias(alias, template)
+}
+
 Nimbus.template_layout :: (self: &#Self, layout: str) {
     default_layout = layout
 }
