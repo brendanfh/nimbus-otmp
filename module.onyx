@@ -54,7 +54,7 @@ Context.view_bind :: (c: Context, to_set: any) {
     if info.kind != .Struct do return
 
     for& info.members {
-        value := misc.any_selector(t, it) |> any_copy(context.allocator)
+        value := misc.any_member(t, it) |> any_copy(context.allocator)
         vars->put(it.name, value)
     }
 }
