@@ -1,6 +1,7 @@
 package nimbus
 
 use otmp
+use core.misc
 
 use runtime
 runtime.vars.OTMP_ENABLE_INLINE_TEMPLATES :: true
@@ -38,6 +39,24 @@ Context.view_set :: (c: Context, name: str, value: any) {
     }
 
     vars->put(name, any_copy(value, context.allocator))
+}
+
+Context.view_bind :: (c: Context, to_set: any) {
+    vars := c->get("_view_data", &Map(str, any)) ?? [] {
+        v := new(Map.make(str, any))
+        c->set("_view_data", v)
+
+        return v
+    }
+
+    t := misc.any_dereference(to_set)
+    info := t.type->info()->as_struct()
+    if info.kind != .Struct do return
+
+    for& info.members {
+        value := misc.any_selector(t, it) |> any_copy(context.allocator)
+        vars->put(it.name, value)
+    }
 }
 
 Context.view_layout :: (c: Context, name: str) {
