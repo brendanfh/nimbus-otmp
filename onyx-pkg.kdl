@@ -12,6 +12,6 @@ config {
 }
 
 dependencies {
-    otmp "0.0.43" git="http://github.com/onyx-lang/pkg-otmp" 
+    otmp "0.0.46" git="http://github.com/onyx-lang/pkg-otmp" 
 }
 
